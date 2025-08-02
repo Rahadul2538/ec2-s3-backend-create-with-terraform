@@ -58,31 +58,35 @@ variable "ami" {
 ✅ Step 2: Provide Actual Values (terraform.tfvars)
 This file overrides the default values of the variables and provides real values for deployment.
 
+hcl
+Copy
+Edit
 region         = "us-east-1"
 instance_type  = "t3.micro"
 ami            = "ami-0c55b159cbfafe1f0"
-
-
 ✅ Step 3: Define AWS Resources (main.tf)
 This file contains the actual AWS resource definitions.
 
-
+hcl
+Copy
+Edit
 provider "aws" {
   region = var.region
 }
+
 resource "aws_instance" "my_ec2" {
+  ami           = var.ami
   instance_type = var.instance_type
-  ami = var.ami
 
   tags = {
-     Name = "Terraform-Ec2-Instance-Lab"
+    Name = "TerraformLabInstance"
   }
 }
-  
-resource "aws_s3_bucket" "tf_bucket" {
-  bucket = "terraform-backend-practice-bucket"
-}
 
+resource "aws_s3_bucket" "tf_bucket" {
+  bucket = "rahadul-terraform-backend-2025"
+  acl    = "private"
+}
 What This Does:
 AWS provider is configured using the selected region.
 
@@ -93,13 +97,16 @@ An S3 bucket is created for storing Terraform state or any custom usage.
 ✅ Step 4: Output Key Information (outputs.tf)
 This file is used to display key information after the infrastructure is applied.
 
+hcl
+Copy
+Edit
 output "instance_public_ip" {
   value = aws_instance.my_ec2.public_ip
 }
+
 output "bucket_name" {
   value = aws_s3_bucket.tf_bucket.bucket
 }
-
 What This Does:
 Prints the EC2 instance's public IP.
 
@@ -108,15 +115,28 @@ Prints the name of the S3 bucket.
 ✅ Step 5: Configure Remote Backend (backend.tf)
 This file configures Terraform to store its state file in the S3 bucket and optionally use DynamoDB for state locking.
 
+hcl
+Copy
+Edit
 terraform {
   backend "s3" {
-    bucket = "terraform-backend-practice-bucket"
-    key = "terraform.tfstate"
-    region  = "us-east-1"
-    profile   = "<your-profile-name>"
-    encrypt = true
+    bucket         = "rahadul-terraform-backend-2025"
+    key            = "terraform.tfstate"
+    region         = "us-east-1"
+    profile        = "aws-profile-name"
+    encrypt        = true
   }
 }
+What This Does:
+Stores Terraform state file remotely in the specified S3 bucket.
+
+Encrypts the state file.
+
+Uses a specific AWS CLI profile.
+
+The "key" acts like the file name in the bucket.
+
+(Optionally) if you create a DynamoDB table, it will enable state locking to prevent simultaneous apply operations.
 
 What This Does:
 Stores Terraform state file remotely in the specified S3 bucket.
@@ -127,9 +147,10 @@ Uses a specific AWS CLI profile.
 
 The "key" acts like the file name in the bucket.
 
-
 ⚙️ How to Use
-
+bash
+Copy
+Edit
 # Step 1: Initialize Terraform (downloads provider, configures backend)
 terraform init
 
@@ -138,9 +159,10 @@ terraform plan
 
 # Step 3: Apply the configuration and create resources
 terraform apply
-
 🧹 Clean Up
 To destroy all resources created by Terraform:
+
+bash
+Copy
+Edit
 terraform destroy
-
-
